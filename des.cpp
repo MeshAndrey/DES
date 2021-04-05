@@ -1,8 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
-
 #include "des.h"
 
 int initial_key_permutaion[] = { 57, 49,  41, 33,  25,  17,  9,
@@ -102,99 +97,126 @@ int final_message_permutation[] =  { 40,  8, 48, 16, 56, 24, 64, 32,
 									 33,  1, 41,  9, 49, 17, 57, 25 };
 
 
-void print_char_as_binary(char input) {
-	int i;
-	for (i=0; i<8; i++) {
-		char shift_byte = 0x01 << (7-i);
-		if (shift_byte & input) {
+void print_char_as_binary(uint8_t input) 
+{	
+	for (uint8_t i = 0; i < 8; i++) 
+	{
+		uint8_t shift_byte = 0x01 << (7 - i);
+		if (shift_byte & input) 
+		{
 			printf("1");
-		} else {
+		}
+		else 
+		{
 			printf("0");
 		}
 	}
 }
 
-void generate_key(unsigned char* key) {
-	int i;
-	for (i=0; i<8; i++) {
-		key[i] = rand()%255;
+void generate_key(uint8_t* key) 
+{
+	for (uint8_t i = 0; i < 8; i++) 
+	{
+		key[i] = rand() % 255;
 	}
 }
 
-void print_key_set(key_set key_set){
-	int i;
+void print_key_set(key_set key_set)
+{	
 	printf("K: \n");
-	for (i=0; i<8; i++) {
+
+	for (uint8_t i = 0; i < 8; i++) 
+	{
 		printf("%02X : ", key_set.k[i]);
 		print_char_as_binary(key_set.k[i]);
 		printf("\n");
 	}
+
 	printf("\nC: \n");
 
-	for (i=0; i<4; i++) {
+	for (uint8_t i = 0; i < 4; i++) 
+	{
 		printf("%02X : ", key_set.c[i]);
 		print_char_as_binary(key_set.c[i]);
 		printf("\n");
 	}
+
 	printf("\nD: \n");
 
-	for (i=0; i<4; i++) {
+	for (uint8_t i = 0; i < 4; i++) 
+	{
 		printf("%02X : ", key_set.d[i]);
 		print_char_as_binary(key_set.d[i]);
 		printf("\n");
 	}
+
 	printf("\n");
 }
 
-void generate_sub_keys(unsigned char* main_key, key_set* key_sets) {
-	int i, j;
-	int shift_size;
-	unsigned char shift_byte, first_shift_bits, second_shift_bits, third_shift_bits, fourth_shift_bits;
+void generate_sub_keys(uint8_t* main_key, key_set* key_sets) 
+{
+	int32_t shift_size;
 
-	for (i=0; i<8; i++) {
+	uint8_t shift_byte, 
+		    first_shift_bits, 
+			second_shift_bits, 
+			third_shift_bits, 
+			fourth_shift_bits;
+
+	for (uint8_t i = 0; i < 8; i++) 
+	{
 		key_sets[0].k[i] = 0;
 	}
 
-	for (i=0; i<56; i++) {
+	for (uint8_t i = 0; i < 56; i++) 
+	{
 		shift_size = initial_key_permutaion[i];
-		shift_byte = 0x80 >> ((shift_size - 1)%8);
-		shift_byte &= main_key[(shift_size - 1)/8];
-		shift_byte <<= ((shift_size - 1)%8);
+		shift_byte = 0x80 >> ((shift_size - 1) % 8);
+		shift_byte &= main_key [(shift_size - 1) / 8];
+		shift_byte <<= ((shift_size - 1) % 8);
 
-		key_sets[0].k[i/8] |= (shift_byte >> i%8);
+		key_sets[0].k[i / 8] |= (shift_byte >> i % 8);
 	}
 
-	for (i=0; i<3; i++) {
+	for (uint8_t i = 0; i < 3; i++) 
+	{
 		key_sets[0].c[i] = key_sets[0].k[i];
 	}
 
 	key_sets[0].c[3] = key_sets[0].k[3] & 0xF0;
 
-	for (i=0; i<3; i++) {
-		key_sets[0].d[i] = (key_sets[0].k[i+3] & 0x0F) << 4;
-		key_sets[0].d[i] |= (key_sets[0].k[i+4] & 0xF0) >> 4;
+	for (uint8_t i = 0; i < 3; i++) 
+	{
+		key_sets[0].d[i]  = (key_sets[0].k[i + 3] & 0x0F) << 4;
+		key_sets[0].d[i] |= (key_sets[0].k[i + 4] & 0xF0) >> 4;
 	}
 
 	key_sets[0].d[3] = (key_sets[0].k[6] & 0x0F) << 4;
 
 
-	for (i=1; i<17; i++) {
-		for (j=0; j<4; j++) {
-			key_sets[i].c[j] = key_sets[i-1].c[j];
-			key_sets[i].d[j] = key_sets[i-1].d[j];
+	for (uint8_t i = 1; i < 17; i++) 
+	{
+		for (uint8_t j = 0; j < 4; j++) 
+		{
+			key_sets[i].c[j] = key_sets[i - 1].c[j];
+			key_sets[i].d[j] = key_sets[i - 1].d[j];
 		}
 
 		shift_size = key_shift_sizes[i];
-		if (shift_size == 1){
+
+		if (shift_size == 1)
+		{
 			shift_byte = 0x80;
-		} else {
+		} 
+		else 
+		{
 			shift_byte = 0xC0;
 		}
 
 		// Process C
-		first_shift_bits = shift_byte & key_sets[i].c[0];
+		first_shift_bits  = shift_byte & key_sets[i].c[0];
 		second_shift_bits = shift_byte & key_sets[i].c[1];
-		third_shift_bits = shift_byte & key_sets[i].c[2];
+		third_shift_bits  = shift_byte & key_sets[i].c[2];
 		fourth_shift_bits = shift_byte & key_sets[i].c[3];
 
 		key_sets[i].c[0] <<= shift_size;
@@ -210,9 +232,9 @@ void generate_sub_keys(unsigned char* main_key, key_set* key_sets) {
 		key_sets[i].c[3] |= (first_shift_bits >> (4 - shift_size));
 
 		// Process D
-		first_shift_bits = shift_byte & key_sets[i].d[0];
+		first_shift_bits  = shift_byte & key_sets[i].d[0];
 		second_shift_bits = shift_byte & key_sets[i].d[1];
-		third_shift_bits = shift_byte & key_sets[i].d[2];
+		third_shift_bits  = shift_byte & key_sets[i].d[2];
 		fourth_shift_bits = shift_byte & key_sets[i].d[3];
 
 		key_sets[i].d[0] <<= shift_size;
@@ -227,25 +249,33 @@ void generate_sub_keys(unsigned char* main_key, key_set* key_sets) {
 		key_sets[i].d[3] <<= shift_size;
 		key_sets[i].d[3] |= (first_shift_bits >> (4 - shift_size));
 
-		for (j=0; j<48; j++) {
+		for (uint8_t j = 0; j < 48; j++) 
+		{
 			shift_size = sub_key_permutation[j];
-			if (shift_size <= 28) {
-				shift_byte = 0x80 >> ((shift_size - 1)%8);
-				shift_byte &= key_sets[i].c[(shift_size - 1)/8];
-				shift_byte <<= ((shift_size - 1)%8);
-			} else {
-				shift_byte = 0x80 >> ((shift_size - 29)%8);
-				shift_byte &= key_sets[i].d[(shift_size - 29)/8];
-				shift_byte <<= ((shift_size - 29)%8);
+
+			if (shift_size <= 28) 
+			{
+				shift_byte = 0x80 >> ((shift_size - 1) % 8);
+				shift_byte &= key_sets[i].c[ (shift_size - 1) / 8 ];
+				shift_byte <<= ((shift_size - 1) % 8);
+			} 
+			else 
+			{
+				shift_byte = 0x80 >> ((shift_size - 29) % 8);
+				shift_byte &= key_sets[i].d[ (shift_size - 29) / 8 ];
+				shift_byte <<= ((shift_size - 29) % 8);
 			}
 
-			key_sets[i].k[j/8] |= (shift_byte >> j%8);
+			key_sets[i].k[j / 8] |= (shift_byte >> j % 8);
 		}
 	}
 }
 
-void process_message(unsigned char* message_piece, unsigned char* processed_piece, key_set* key_sets, int mode) {
-	int i, k;
+void process_message(uint8_t* message_piece, 
+					 uint8_t* processed_piece, 
+					 key_set* key_sets, 
+					 int32_t  mode) 
+{
 	int shift_size;
 	unsigned char shift_byte;
 
@@ -253,51 +283,65 @@ void process_message(unsigned char* message_piece, unsigned char* processed_piec
 	memset(initial_permutation, 0, 8);
 	memset(processed_piece, 0, 8);
 
-	for (i=0; i<64; i++) {
+	for (uint8_t i = 0; i < 64; i++) 
+	{
 		shift_size = initial_message_permutation[i];
-		shift_byte = 0x80 >> ((shift_size - 1)%8);
-		shift_byte &= message_piece[(shift_size - 1)/8];
-		shift_byte <<= ((shift_size - 1)%8);
+		shift_byte = 0x80 >> ((shift_size - 1) % 8);
+		shift_byte &= message_piece[ (shift_size - 1) / 8 ];
+		shift_byte <<= ((shift_size - 1) % 8);
 
-		initial_permutation[i/8] |= (shift_byte >> i%8);
+		initial_permutation[i / 8] |= (shift_byte >> i % 8);
 	}
 
-	unsigned char l[4], r[4];
-	for (i=0; i<4; i++) {
+	uint8_t l[4], r[4];
+
+	for (uint8_t i = 0; i < 4; i++) 
+	{
 		l[i] = initial_permutation[i];
-		r[i] = initial_permutation[i+4];
+		r[i] = initial_permutation[i + 4];
 	}
 
-	unsigned char ln[4], rn[4], er[6], ser[4];
+	uint8_t ln[4], 
+		    rn[4], 
+			er[6], 
+			ser[4];
 
 	int key_index;
-	for (k=1; k<=16; k++) {
+
+	for (uint8_t k = 1; k <= 16; k++) 
+	{
 		memcpy(ln, r, 4);
 
 		memset(er, 0, 6);
 
-		for (i=0; i<48; i++) {
+		for (uint8_t i = 0; i < 48; i++) 
+		{
 			shift_size = message_expansion[i];
-			shift_byte = 0x80 >> ((shift_size - 1)%8);
-			shift_byte &= r[(shift_size - 1)/8];
-			shift_byte <<= ((shift_size - 1)%8);
+			shift_byte = 0x80 >> ((shift_size - 1) % 8);
+			shift_byte &= r[ (shift_size - 1) / 8 ];
+			shift_byte <<= ((shift_size - 1) % 8);
 
-			er[i/8] |= (shift_byte >> i%8);
+			er[i / 8] |= (shift_byte >> i % 8);
 		}
 
-		if (mode == DECRYPTION_MODE) {
+		if (mode == DECRYPTION_MODE) 
+		{
 			key_index = 17 - k;
-		} else {
+		} 
+		else 
+		{
 			key_index = k;
 		}
 
-		for (i=0; i<6; i++) {
+		for (uint8_t i = 0; i < 6; i++) 
+		{
 			er[i] ^= key_sets[key_index].k[i];
 		}
 
-		unsigned char row, column;
+		uint8_t row, column;
 
-		for (i=0; i<4; i++) {
+		for (uint8_t i = 0; i < 4; i++) 
+		{
 			ser[i] = 0;
 		}
 
@@ -312,7 +356,7 @@ void process_message(unsigned char* message_piece, unsigned char* processed_piec
 		column = 0;
 		column |= ((er[0] & 0x78) >> 3);
 
-		ser[0] |= ((unsigned char)S1[row*16+column] << 4);
+		ser[0] |= ((uint8_t)S1[row * 16 + column] << 4);
 
 		row = 0;
 		row |= (er[0] & 0x02);
@@ -322,7 +366,7 @@ void process_message(unsigned char* message_piece, unsigned char* processed_piec
 		column |= ((er[0] & 0x01) << 3);
 		column |= ((er[1] & 0xE0) >> 5);
 
-		ser[0] |= (unsigned char)S2[row*16+column];
+		ser[0] |= (uint8_t)S2[row * 16 + column];
 
 		// Byte 2
 		row = 0;
@@ -333,7 +377,7 @@ void process_message(unsigned char* message_piece, unsigned char* processed_piec
 		column |= ((er[1] & 0x07) << 1);
 		column |= ((er[2] & 0x80) >> 7);
 
-		ser[1] |= ((unsigned char)S3[row*16+column] << 4);
+		ser[1] |= ((uint8_t)S3[row * 16 + column] << 4);
 
 		row = 0;
 		row |= ((er[2] & 0x20) >> 4);
@@ -342,7 +386,7 @@ void process_message(unsigned char* message_piece, unsigned char* processed_piec
 		column = 0;
 		column |= ((er[2] & 0x1E) >> 1);
 
-		ser[1] |= (unsigned char)S4[row*16+column];
+		ser[1] |= (uint8_t)S4[row * 16 + column];
 
 		// Byte 3
 		row = 0;
@@ -352,7 +396,7 @@ void process_message(unsigned char* message_piece, unsigned char* processed_piec
 		column = 0;
 		column |= ((er[3] & 0x78) >> 3);
 
-		ser[2] |= ((unsigned char)S5[row*16+column] << 4);
+		ser[2] |= ((uint8_t)S5[row * 16 + column] << 4);
 
 		row = 0;
 		row |= (er[3] & 0x02);
@@ -362,7 +406,7 @@ void process_message(unsigned char* message_piece, unsigned char* processed_piec
 		column |= ((er[3] & 0x01) << 3);
 		column |= ((er[4] & 0xE0) >> 5);
 
-		ser[2] |= (unsigned char)S6[row*16+column];
+		ser[2] |= (uint8_t)S6[row * 16 + column];
 
 		// Byte 4
 		row = 0;
@@ -373,7 +417,7 @@ void process_message(unsigned char* message_piece, unsigned char* processed_piec
 		column |= ((er[4] & 0x07) << 1);
 		column |= ((er[5] & 0x80) >> 7);
 
-		ser[3] |= ((unsigned char)S7[row*16+column] << 4);
+		ser[3] |= ((uint8_t)S7[row * 16 + column] << 4);
 
 		row = 0;
 		row |= ((er[5] & 0x20) >> 4);
@@ -382,43 +426,50 @@ void process_message(unsigned char* message_piece, unsigned char* processed_piec
 		column = 0;
 		column |= ((er[5] & 0x1E) >> 1);
 
-		ser[3] |= (unsigned char)S8[row*16+column];
+		ser[3] |= (uint8_t)S8[row * 16 + column];
 
-		for (i=0; i<4; i++) {
+		for (uint8_t i = 0; i < 4; i++) 
+		{
 			rn[i] = 0;
 		}
 
-		for (i=0; i<32; i++) {
+		for (uint8_t i = 0; i < 32; i++) 
+		{
 			shift_size = right_sub_message_permutation[i];
-			shift_byte = 0x80 >> ((shift_size - 1)%8);
-			shift_byte &= ser[(shift_size - 1)/8];
-			shift_byte <<= ((shift_size - 1)%8);
+			shift_byte = 0x80 >> ((shift_size - 1) % 8);
+			shift_byte &= ser[(shift_size - 1) / 8];
+			shift_byte <<= ((shift_size - 1) % 8);
 
-			rn[i/8] |= (shift_byte >> i%8);
+			rn[i / 8] |= (shift_byte >> i % 8);
 		}
 
-		for (i=0; i<4; i++) {
+		for (uint8_t i = 0; i < 4; i++) 
+		{
 			rn[i] ^= l[i];
 		}
 
-		for (i=0; i<4; i++) {
+		for (uint8_t i = 0; i < 4; i++) 
+		{
 			l[i] = ln[i];
 			r[i] = rn[i];
 		}
 	}
 
-	unsigned char pre_end_permutation[8];
-	for (i=0; i<4; i++) {
+	uint8_t pre_end_permutation[8];
+
+	for (uint8_t i = 0; i < 4; i++) 
+	{
 		pre_end_permutation[i] = r[i];
-		pre_end_permutation[4+i] = l[i];
+		pre_end_permutation[4 + i] = l[i];
 	}
 
-	for (i=0; i<64; i++) {
+	for (uint8_t i = 0; i < 64; i++) 
+	{
 		shift_size = final_message_permutation[i];
-		shift_byte = 0x80 >> ((shift_size - 1)%8);
-		shift_byte &= pre_end_permutation[(shift_size - 1)/8];
-		shift_byte <<= ((shift_size - 1)%8);
+		shift_byte = 0x80 >> ((shift_size - 1) % 8);
+		shift_byte &= pre_end_permutation[(shift_size - 1) / 8];
+		shift_byte <<= ((shift_size - 1) % 8);
 
-		processed_piece[i/8] |= (shift_byte >> i%8);
+		processed_piece[i / 8] |= (shift_byte >> i % 8);
 	}
 }
